@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Search Generator v4.4</title>
+    <style>
+      :root {
+        --cell: 28px;
+        --border: 2px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", system-ui, Arial, sans-serif;
+        background: #f5f6f8;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      header {
+        width: 100%;
+        background: #2563eb;
+        color: #fff;
+        text-align: center;
+        font-weight: 800;
+        font-size: 1.2rem;
+        padding: 14px 10px;
+      }
+      .container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin: 16px;
+        justify-content: center;
+      }
+      .card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+      .settings {
+        width: 360px;
+        padding: 16px;
+      }
+      .settings h3 {
+        margin: 0 0 8px 0;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin-top: 10px;
+      }
+      input[type="number"],
+      input[type="text"],
+      input[type="color"],
+      textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #cfd6e4;
+        border-radius: 8px;
+        background: #fff;
+      }
+      textarea {
+        min-height: 140px;
+        resize: vertical;
+        font-family: Consolas, monospace;
+        line-height: 1.35;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .row > * {
+        flex: 1;
+      }
+      .row2 {
+        display: flex;
+        gap: 8px;
+      }
+      .row2 > button {
+        flex: 1;
+      }
+      button {
+        width: 100%;
+        border: none;
+        color: #fff;
+        background: #2563eb;
+        padding: 10px;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      button:hover {
+        opacity: 0.92;
+      }
+      .muted {
+        color: #5b6472;
+        font-size: 0.9rem;
+      }
+      .inline {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .switch-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+      }
+      .switch {
+        position: relative;
+        width: 46px;
+        height: 24px;
+        display: inline-block;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        inset: 0;
+        background: #c9cfda;
+        border-radius: 34px;
+        transition: 0.3s;
+      }
+      .slider:before {
+        content: "";
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        left: 3px;
+        top: 3px;
+        background: #fff;
+        border-radius: 50%;
+        transition: 0.3s;
+      }
+      .switch input:checked + .slider {
+        background: #4ade80;
+      }
+      .switch input:checked + .slider:before {
+        transform: translateX(22px);
+      }
+
+      .workspace {
+        padding: 16px;
+        text-align: center;
+      }
+      .title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        margin-bottom: 4px;
+      }
+      .subtitle {
+        font-size: 0.95rem;
+        color: #4b5563;
+        margin-bottom: 12px;
+      }
+
+      .grid-wrap {
+        position: relative;
+        display: inline-block;
+      }
+      table#gridTable {
+        border-collapse: collapse;
+        margin: auto;
+        background: #fff;
+      }
+      #gridTable td {
+        width: var(--cell);
+        height: var(--cell);
+        text-align: center;
+        vertical-align: middle;
+        border: var(--border) solid #000;
+        font: 600 18px/1 monospace;
+        text-transform: uppercase;
+        background: #fff;
+        user-select: none;
+      }
+      svg#overlay {
+        position: absolute;
+        pointer-events: none;
+      }
+
+      .wordlist {
+        margin-top: 12px;
+        text-align: left;
+        max-width: 1100px;
+      }
+      .wordlist b {
+        display: block;
+        margin-bottom: 6px;
+      }
+      .words {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        align-items: center;
+      }
+      .words span {
+        font-weight: 800;
+      }
+    </style>
+  </head>
+  <body>
+    <header>Word Search Generator</header>
+
+    <div class="container">
+      <!-- SETTINGS -->
+      <section class="card settings">
+        <h3>Settings</h3>
+
+        <label>Title</label>
+        <input
+          id="titleInput"
+          type="text"
+          placeholder="e.g. Back to School Word Search"
+        />
+
+        <label>Subtitle / Author</label>
+        <input
+          id="subtitleInput"
+          type="text"
+          placeholder="e.g. Ms. Anna · Grade 3"
+        />
+
+        <label>Grid size (width × height, 5–50)</label>
+        <div class="row">
+          <input id="gridWidth" type="number" min="5" max="50" value="12" />
+          <span style="flex: 0; font-weight: bold">×</span>
+          <input id="gridHeight" type="number" min="5" max="50" value="12" />
+        </div>
+
+        <label>Custom words (one per line)</label>
+        <textarea
+          id="customWords"
+          placeholder="CAT
+DOG
+ELEPHANT
+ZEBRA"
+        ></textarea>
+
+        <label>Input font size: <span id="fsVal">14</span>px</label>
+        <input
+          id="fsRange"
+          type="range"
+          min="12"
+          max="24"
+          step="1"
+          value="14"
+        />
+
+        <div class="row">
+          <label class="inline"
+            ><input id="allowDiag" type="checkbox" checked /> Allow
+            diagonals</label
+          >
+          <label class="inline"
+            ><input id="allowBack" type="checkbox" checked /> Allow
+            backwards</label
+          >
+        </div>
+        <label class="inline"
+          ><input id="showList" type="checkbox" checked /> Show word list under
+          grid</label
+        >
+
+        <div class="switch-row">
+          <div style="font-weight: 700">Answer Mode</div>
+          <label class="switch">
+            <input id="answerSwitch" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <label style="margin-top: 8px">Answer colors</label>
+        <div class="row">
+          <span>Horizontal</span><input type="color" id="cH" value="#3b82f6" />
+        </div>
+        <div class="row">
+          <span>Vertical</span><input type="color" id="cV" value="#22c55e" />
+        </div>
+        <div class="row">
+          <span>Diagonal ↗</span><input type="color" id="cD1" value="#ef4444" />
+        </div>
+        <div class="row">
+          <span>Diagonal ↘</span><input type="color" id="cD2" value="#f59e0b" />
+        </div>
+
+        <label style="margin-top: 8px"
+          >Answer circle size: <span id="ansSizeVal">5</span>px</label
+        >
+        <input id="ansSize" type="range" min="0" max="20" step="1" value="5" />
+
+        <label style="margin-top: 8px"
+          >Stroke thickness: <span id="ansThickVal">1</span>px</label
+        >
+        <input
+          id="ansThick"
+          type="range"
+          min="1"
+          max="5"
+          step="0.5"
+          value="1"
+        />
+
+        <div class="row">
+          <div>
+            <label>Seed</label>
+            <input id="seedInput" type="text" placeholder="e.g. 12345" />
+          </div>
+          <button id="diceBtn" title="Random seed">🎲</button>
+        </div>
+
+        <div class="row2">
+          <button id="genBtn">Generate Puzzle</button>
+          <button id="shareBtn" style="background: #0ea5e9">Permalink</button>
+        </div>
+
+        <label>Export file name</label>
+        <input id="fname" type="text" placeholder="e.g. wordsearch_level1" />
+
+        <!-- ปุ่มพรีวิว / เอ็กซ์พอร์ต -->
+        <button id="previewBtn" style="background: #7c3aed">
+          🔍 Preview Puzzle
+        </button>
+
+        <div class="muted">
+          Tips: A–Z, one per line, word length ≤ grid width/height
+        </div>
+      </section>
+
+      <!-- WORKSPACE -->
+      <section class="card workspace" id="ws">
+        <div class="title" id="titleOut"></div>
+        <div class="subtitle" id="subtitleOut"></div>
+
+        <div class="grid-wrap" id="gridWrap">
+          <table id="gridTable" aria-label="word search grid"></table>
+          <svg id="overlay"></svg>
+        </div>
+
+        <div class="wordlist" id="wordlistWrap">
+          <b>Words</b>
+          <div id="wordList" class="words"></div>
+        </div>
+      </section>
+    </div>
+    <!-- Preview Modal -->
+    <div
+      id="previewModal"
+      style="
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      "
+    >
+      <div
+        style="
+          background: #fff;
+          border-radius: 12px;
+          max-width: 90%;
+          max-height: 90%;
+          overflow: auto;
+          padding: 16px;
+          text-align: center;
+        "
+      >
+        <h3 style="margin: 0 0 10px 0">Preview Puzzle</h3>
+        <div
+          id="previewContainer"
+          style="
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px;
+          "
+        ></div>
+        <div
+          style="
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+          "
+        >
+          <button
+            id="exportA4"
+            style="
+              background: #2563eb;
+              color: #fff;
+              border: none;
+              padding: 10px 14px;
+              border-radius: 8px;
+              font-weight: 700;
+              cursor: pointer;
+            "
+          >
+            Export SVG (A4)
+          </button>
+          <button
+            id="exportLetter"
+            style="
+              background: #10b981;
+              color: #fff;
+              border: none;
+              padding: 10px 14px;
+              border-radius: 8px;
+              font-weight: 700;
+              cursor: pointer;
+            "
+          >
+            Export SVG (US Letter)
+          </button>
+          <button
+            id="closePreview"
+            style="
+              background: #6b7280;
+              color: #fff;
+              border: none;
+              padding: 10px 14px;
+              border-radius: 8px;
+              font-weight: 700;
+              cursor: pointer;
+            "
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+    <script>
+      /* ===== RNG with seed ===== */
+      function xmur3(str) {
+        for (let i = 0, h = 1779033703 ^ str.length; i < str.length; i++) {
+          h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+          h = (h << 13) | (h >>> 19);
+        }
+        return () => {
+          h = Math.imul(h ^ (h >>> 16), 2246822507);
+          h = Math.imul(h ^ (h >>> 13), 3266489909);
+          return (h ^ (h >>> 16)) >>> 0;
+        };
+      }
+      function mulberry32(a) {
+        return function () {
+          let t = (a += 0x6d2b79f5);
+          t = Math.imul(t ^ (t >>> 15), t | 1);
+          t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      let R = Math.random;
+      function setSeed(s) {
+        if (!s) {
+          R = Math.random;
+          return;
+        }
+        const seed = xmur3(s)();
+        R = mulberry32(seed);
+      }
+
+      /* ===== State ===== */
+      let gridW = 12,
+        gridH = 12,
+        grid = [],
+        placed = [],
+        showAnswers = false;
+      const DIRS_ALL = [
+        { dx: 1, dy: 0, key: "H" },
+        { dx: -1, dy: 0, key: "H" },
+        { dx: 0, dy: 1, key: "V" },
+        { dx: 0, dy: -1, key: "V" },
+        { dx: 1, dy: -1, key: "D1" },
+        { dx: -1, dy: 1, key: "D1" },
+        { dx: 1, dy: 1, key: "D2" },
+        { dx: -1, dy: -1, key: "D2" },
+      ];
+      const A = (n) => String.fromCharCode(65 + n);
+      const U = (s) => s.replace(/[^A-Z]/g, "");
+
+      /* ===== Build/place ===== */
+      function newGrid(w, h) {
+        grid = Array.from({ length: h }, () => Array(w).fill(""));
+      }
+      function fillRandom() {
+        for (let y = 0; y < gridH; y++)
+          for (let x = 0; x < gridW; x++)
+            if (!grid[y][x]) grid[y][x] = A((R() * 26) | 0);
+      }
+
+      function tryPlace(original, allowDiag, allowBack) {
+        const dirs = DIRS_ALL.filter(
+          (d) => d.key === "H" || d.key === "V" || allowDiag
+        );
+        const candidate = allowBack
+          ? R() < 0.5
+            ? original.split("").reverse().join("")
+            : original
+          : original;
+        for (let t = 0; t < 350; t++) {
+          const { dx, dy, key } = dirs[(R() * dirs.length) | 0];
+          const x0 = (R() * gridW) | 0,
+            y0 = (R() * gridH) | 0;
+          const x1 = x0 + dx * (candidate.length - 1),
+            y1 = y0 + dy * (candidate.length - 1);
+          if (x1 < 0 || y1 < 0 || x1 >= gridW || y1 >= gridH) continue;
+          let ok = true;
+          for (let i = 0; i < candidate.length; i++) {
+            const x = x0 + dx * i,
+              y = y0 + dy * i;
+            if (grid[y][x] && grid[y][x] !== candidate[i]) {
+              ok = false;
+              break;
+            }
+          }
+          if (!ok) continue;
+          for (let i = 0; i < candidate.length; i++)
+            grid[y0 + dy * i][x0 + dx * i] = candidate[i];
+          placed.push({
+            word: original,
+            x: x0,
+            y: y0,
+            dx,
+            dy,
+            dir: key,
+            len: candidate.length,
+          });
+          return true;
+        }
+        return false;
+      }
+
+      /* ===== Render ===== */
+      function render() {
+        titleOut.textContent = titleInput.value.trim();
+        subtitleOut.textContent = subtitleInput.value.trim();
+
+        gridTable.innerHTML = "";
+        for (let y = 0; y < gridH; y++) {
+          const tr = document.createElement("tr");
+          for (let x = 0; x < gridW; x++) {
+            const td = document.createElement("td");
+            td.id = `c${x}_${y}`;
+            td.textContent = grid[y][x];
+            tr.appendChild(td);
+          }
+          gridTable.appendChild(tr);
+        }
+        drawOverlay();
+
+        const colors = {
+          H: cH.value,
+          V: cV.value,
+          D1: cD1.value,
+          D2: cD2.value,
+        };
+        wordList.innerHTML = "";
+        wordlistWrap.style.display = showList.checked ? "block" : "none";
+        placed.forEach((p) => {
+          const s = document.createElement("span");
+          s.textContent = p.word; // คำล้วน
+          s.style.color = showAnswers ? colors[p.dir] : "#111827";
+          wordList.appendChild(s);
+        });
+      }
+
+      /* ===== Overlay: capsule outline around words (no transform) ===== */
+      function drawOverlay() {
+        const svg = overlay;
+        svg.innerHTML = "";
+
+        const wrapRect = gridWrap.getBoundingClientRect();
+        const tblRect = gridTable.getBoundingClientRect();
+        svg.style.left = tblRect.left - wrapRect.left + "px";
+        svg.style.top = tblRect.top - wrapRect.top + "px";
+        svg.setAttribute("width", tblRect.width);
+        svg.setAttribute("height", tblRect.height);
+
+        if (!showAnswers) return;
+
+        const colors = {
+          H: cH.value,
+          V: cV.value,
+          D1: cD1.value,
+          D2: cD2.value,
+        };
+        const padPlus = parseInt(ansSize.value, 10) || 0; // ระยะเพิ่มรอบคำ/หัวท้าย
+        const strokeW = parseFloat(ansThick.value) || 1; // ความหนาเส้นขอบ
+
+        const center = (x, y) => {
+          const td = gridTable.rows[y].cells[x];
+          const r = td.getBoundingClientRect();
+          return {
+            cx: r.left - tblRect.left + r.width / 2,
+            cy: r.top - tblRect.top + r.height / 2,
+            w: r.width,
+            h: r.height,
+          };
+        };
+
+        placed.forEach((p) => {
+          const s = center(p.x, p.y);
+          const e = center(p.x + p.dx * (p.len - 1), p.y + p.dy * (p.len - 1));
+
+          const dx = e.cx - s.cx,
+            dy = e.cy - s.cy;
+          const dist = Math.hypot(dx, dy) || 1;
+          const ux = dx / dist,
+            uy = dy / dist;
+          const px = -uy,
+            py = ux;
+
+          const cell = Math.min(s.w, s.h);
+
+          // r = ความอ้วนของกรอบ (ปรับด้วยสไลเดอร์ ansSize)
+          const r = cell * 0.35 + padPlus * 0.4; // เดิม 0.40 ได้ แต่จะอ้วนไปนิด ลองเริ่ม 0.35
+
+          // endPad = ระยะดันหัว-ท้าย ให้โค้งอยู่พอดีที่ขอบเซลล์ปลายคำ
+          const endPad = cell * 0.5 - strokeW / 2 - 1.99; // ครึ่งเซลล์ - ครึ่งความหนาเส้น - เผื่อ 0.5px
+
+          const a1x = s.cx - ux * endPad + px * r,
+            a1y = s.cy - uy * endPad + py * r;
+          const a2x = e.cx + ux * endPad + px * r,
+            a2y = e.cy + uy * endPad + py * r;
+          const b2x = e.cx + ux * endPad - px * r,
+            b2y = e.cy + uy * endPad - py * r;
+          const b1x = s.cx - ux * endPad - px * r,
+            b1y = s.cy - uy * endPad - py * r;
+
+          const path = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path"
+          );
+          const d = `M ${a1x} ${a1y} L ${a2x} ${a2y}
+               A ${r} ${r} 0 0 0 ${b2x} ${b2y}
+               L ${b1x} ${b1y}
+               A ${r} ${r} 0 0 0 ${a1x} ${a1y} Z`;
+          path.setAttribute("d", d);
+          path.setAttribute("fill", "none");
+          path.setAttribute("stroke", colors[p.dir]);
+          path.setAttribute("stroke-width", strokeW);
+          svg.appendChild(path);
+        });
+      }
+
+      /* ===== Generate ===== */
+      function getWords() {
+        return customWords.value
+          .split(/\r?\n/)
+          .map((s) => s.trim().toUpperCase())
+          .filter(Boolean)
+          .map(U);
+      }
+      function generate() {
+        gridW = Math.max(
+          5,
+          Math.min(50, parseInt(gridWidth.value || "12", 10))
+        );
+        gridH = Math.max(
+          5,
+          Math.min(50, parseInt(gridHeight.value || "12", 10))
+        );
+        gridWidth.value = gridW;
+        gridHeight.value = gridH;
+
+        placed = [];
+        newGrid(gridW, gridH);
+
+        const allowDiag = allowDiagEl.checked;
+        const allowBack = allowBackEl.checked;
+
+        getWords()
+          .filter((w) => w.length > 0 && w.length <= Math.max(gridW, gridH))
+          .forEach((w) => tryPlace(w, allowDiag, allowBack));
+
+        fillRandom();
+        render();
+      }
+
+      function buildSVGDoc(answerMode, size = "A4") {
+        // --- หน้าเป้า (A4 / US Letter) ---
+        const MM_TO_PX = 3.7795275591; // 96dpi
+        let wmm = 210,
+          hmm = 297; // A4
+        if (size === "Letter") {
+          wmm = 215.9;
+          hmm = 279.4;
+        } // 8.5×11 inch
+        const pageW = Math.round(wmm * MM_TO_PX);
+        const pageH = Math.round(hmm * MM_TO_PX);
+
+        // --- ขอบกระดาษ + สเกลอัตโนมัติให้พอดีหน้า ---
+        const margin = 36; // px ~ 0.375"
+        const padTopTitle = 26; // ระยะเฮดเดอร์ด้านบน
+        const listBlockH = showList.checked ? 90 : 0;
+
+        // เราคิดขนาดเนื้อหา "ธรรมชาติ" ที่ cellBase = 26px
+        const cellBase = 26;
+        const naturalW = gridW * cellBase;
+        const naturalH = padTopTitle + gridH * cellBase + listBlockH;
+
+        // สเกลให้พอดีกับหน้าพิมพ์
+        const maxW = pageW - margin * 2;
+        const maxH = pageH - margin * 2;
+        const scale = Math.min(maxW / naturalW, maxH / naturalH);
+
+        // ขนาด cell/stroke/ฟอนต์หลังสเกล
+        const cell = cellBase * scale;
+        const stroke = 2 * scale;
+        const titleFont = 18 * scale;
+        const subtitleFont = 12 * scale;
+        const wordFont = 14 * scale;
+
+        const padX = margin;
+        const padY = margin;
+
+        const colors = {
+          H: cH.value,
+          V: cV.value,
+          D1: cD1.value,
+          D2: cD2.value,
+        };
+        const esc = (s) =>
+          s
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;");
+
+        let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pageW}" height="${pageH}">
+    <rect x="0" y="0" width="${pageW}" height="${pageH}" fill="white"/>
+    <text x="${padX}" y="${
+          padY - 6 * scale
+        }" font-size="${titleFont}" font-weight="800">${esc(
+          titleInput.value || ""
+        )}</text>
+    <text x="${padX}" y="${
+          padY + 12 * scale
+        }" font-size="${subtitleFont}" fill="#4b5563">${esc(
+          subtitleInput.value || ""
+        )}</text>
+    <g transform="translate(${padX},${padY + 20 * scale})">`;
+
+        // --- กริดตัวอักษร ---
+        for (let y = 0; y < gridH; y++) {
+          for (let x = 0; x < gridW; x++) {
+            const X = x * cell,
+              Y = y * cell;
+            svg += `<rect x="${X}" y="${Y}" width="${cell}" height="${cell}" fill="white" stroke="black" stroke-width="${stroke}"/>`;
+            svg += `<text x="${X + cell / 2}" y="${
+              Y + cell * 0.68
+            }" font-family="monospace" font-size="${Math.round(
+              cell * 0.62
+            )}" text-anchor="middle">${esc(grid[y][x])}</text>`;
+          }
+        }
+
+        // --- วงเฉลย (แคปซูลโปร่ง) ---
+        if (answerMode) {
+          const padPlus = parseInt(ansSize.value, 10) || 0;
+          const sUser = parseFloat(ansThick.value) || 1;
+          const strokeW = sUser * scale; // หนาแปรตามสเกล
+
+          placed.forEach((p) => {
+            const sx = (p.x + 0.5) * cell;
+            const sy = (p.y + 0.5) * cell;
+            const ex = (p.x + p.dx * (p.len - 1) + 0.5) * cell;
+            const ey = (p.y + p.dy * (p.len - 1) + 0.5) * cell;
+
+            const dx = ex - sx,
+              dy = ey - sy;
+            const dist = Math.hypot(dx, dy) || 1;
+            const ux = dx / dist,
+              uy = dy / dist;
+            const px = -uy,
+              py = ux;
+
+            // ให้ปลายพอดีกรอบ (ครึ่งเซลล์ - ครึ่งความหนาเส้น - เผื่อเล็กน้อย)
+            const r = cell * 0.35 + padPlus * 0.4 * scale;
+            const endPad = cell * 0.5 - strokeW / 2 - 0.5;
+
+            const a1x = sx - ux * endPad + px * r,
+              a1y = sy - uy * endPad + py * r;
+            const a2x = ex + ux * endPad + px * r,
+              a2y = ey + uy * endPad + py * r;
+            const b2x = ex + ux * endPad - px * r,
+              b2y = ey + uy * endPad - py * r;
+            const b1x = sx - ux * endPad - px * r,
+              b1y = sy - uy * endPad - py * r;
+
+            svg += `<path d="M ${a1x} ${a1y} L ${a2x} ${a2y}
+                       A ${r} ${r} 0 0 0 ${b2x} ${b2y}
+                       L ${b1x} ${b1y}
+                       A ${r} ${r} 0 0 0 ${a1x} ${a1y} Z"
+                   fill="none" stroke="${
+                     colors[p.dir]
+                   }" stroke-width="${strokeW}" />`;
+          });
+        }
+
+        // --- Word list ---
+        svg += `</g><g transform="translate(${padX},${
+          padY + 20 * scale + gridH * cell + 30 * scale
+        })">`;
+        if (showList.checked) {
+          svg += `<text x="0" y="0" font-size="${
+            16 * scale
+          }" font-weight="700">Words:</text>`;
+          let x = 0,
+            y = 22 * scale;
+          placed.forEach((p) => {
+            const col = answerMode ? colors[p.dir] : "#111827";
+            const w = esc(p.word);
+            svg += `<text x="${x}" y="${y}" font-size="${wordFont}" fill="${col}" font-weight="800">${w}</text>`;
+            x += w.length * 8 * scale + 24 * scale;
+            if (x > pageW - padX * 2 - 120 * scale) {
+              x = 0;
+              y += 18 * scale;
+            }
+          });
+        }
+        svg += `</g></svg>`;
+        return svg;
+      }
+
+      function exportSVG(answerMode, size = "A4") {
+        const svg = buildSVGDoc(answerMode, size);
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(
+          new Blob([svg], { type: "image/svg+xml" })
+        );
+        const base = fname.value || "wordsearch";
+        const mode = answerMode ? "answer" : "puzzle";
+        a.download = `${base}-${mode}-${size}.svg`;
+        a.click();
+      }
+
+      /* ===== Permalink ===== */
+      function toParams() {
+        const data = {
+          t: titleInput.value || "",
+          s: subtitleInput.value || "",
+          gw: gridW,
+          gh: gridH,
+          ad: allowDiagEl.checked ? 1 : 0,
+          aw: allowBackEl.checked ? 1 : 0,
+          sl: showList.checked ? 1 : 0,
+          ah: answerSwitch.checked ? 1 : 0,
+          cH: cH.value,
+          cV: cV.value,
+          c1: cD1.value,
+          c2: cD2.value,
+          ae: ansSize.value,
+          as: ansThick.value,
+          sd: seedInput.value || "",
+          w: btoa(unescape(encodeURIComponent(customWords.value))),
+        };
+        return new URLSearchParams(data).toString();
+      }
+      function fromParams() {
+        const q = new URLSearchParams(location.search);
+        if (!q.has("w")) return;
+        titleInput.value = q.get("t") || "";
+        subtitleInput.value = q.get("s") || "";
+        gridWidth.value = q.get("gw") || 12;
+        gridHeight.value = q.get("gh") || 12;
+        allowDiagEl.checked = q.get("ad") === "1";
+        allowBackEl.checked = q.get("aw") === "1";
+        showList.checked = q.get("sl") === "1";
+        answerSwitch.checked = q.get("ah") === "1";
+        cH.value = q.get("cH") || cH.value;
+        cV.value = q.get("cV") || cV.value;
+        cD1.value = q.get("c1") || cD1.value;
+        cD2.value = q.get("c2") || cD2.value;
+        if (q.get("ae")) ansSize.value = q.get("ae");
+        if (q.get("as")) ansThick.value = q.get("as");
+        seedInput.value = q.get("sd") || "";
+        try {
+          customWords.value = decodeURIComponent(escape(atob(q.get("w"))));
+        } catch {}
+      }
+
+      /* ===== DOM refs ===== */
+      const titleInput = document.getElementById("titleInput");
+      const subtitleInput = document.getElementById("subtitleInput");
+      const titleOut = document.getElementById("titleOut");
+      const subtitleOut = document.getElementById("subtitleOut");
+
+      const gridWidth = document.getElementById("gridWidth");
+      const gridHeight = document.getElementById("gridHeight");
+      const customWords = document.getElementById("customWords");
+      const fsRange = document.getElementById("fsRange");
+      const fsVal = document.getElementById("fsVal");
+
+      const allowDiagEl = document.getElementById("allowDiag");
+      const allowBackEl = document.getElementById("allowBack");
+      const showList = document.getElementById("showList");
+
+      const answerSwitch = document.getElementById("answerSwitch");
+      const cH = document.getElementById("cH"),
+        cV = document.getElementById("cV"),
+        cD1 = document.getElementById("cD1"),
+        cD2 = document.getElementById("cD2");
+
+      const ansSize = document.getElementById("ansSize");
+      const ansThick = document.getElementById("ansThick");
+      const ansSizeVal = document.getElementById("ansSizeVal");
+      const ansThickVal = document.getElementById("ansThickVal");
+
+      const seedInput = document.getElementById("seedInput");
+      const diceBtn = document.getElementById("diceBtn");
+
+      const genBtn = document.getElementById("genBtn");
+      const shareBtn = document.getElementById("shareBtn");
+
+      const gridTable = document.getElementById("gridTable");
+      const gridWrap = document.getElementById("gridWrap");
+      const overlay = document.getElementById("overlay");
+      const wordList = document.getElementById("wordList");
+      const wordlistWrap = document.getElementById("wordlistWrap");
+
+      const previewBtn = document.getElementById("previewBtn");
+      const previewModal = document.getElementById("previewModal");
+      const previewContainer = document.getElementById("previewContainer");
+      const exportA4 = document.getElementById("exportA4");
+      const exportLetter = document.getElementById("exportLetter");
+      const closePreview = document.getElementById("closePreview");
+
+      /* ===== Events ===== */
+      fsRange.addEventListener("input", () => {
+        customWords.style.fontSize = fsRange.value + "px";
+        fsVal.textContent = fsRange.value;
+      });
+      ["cH", "cV", "cD1", "cD2"].forEach((id) =>
+        document.getElementById(id).addEventListener("input", () => {
+          if (answerSwitch.checked) render();
+        })
+      );
+      answerSwitch.addEventListener("change", () => {
+        showAnswers = answerSwitch.checked;
+        render();
+      });
+
+      function refreshAnswerControls() {
+        ansSizeVal.textContent = ansSize.value;
+        ansThickVal.textContent = ansThick.value;
+        if (answerSwitch.checked) render();
+      }
+      ansSize.addEventListener("input", refreshAnswerControls);
+      ansThick.addEventListener("input", refreshAnswerControls);
+
+      diceBtn.addEventListener("click", () => {
+        seedInput.value = Math.floor(Math.random() * 1e9).toString();
+      });
+      shareBtn.addEventListener("click", () => {
+        const url = location.origin + location.pathname + "?" + toParams();
+        navigator.clipboard.writeText(url).catch(() => {});
+        shareBtn.textContent = "Copied link!";
+        setTimeout(() => (shareBtn.textContent = "Permalink"), 1200);
+      });
+
+      genBtn.addEventListener("click", () => {
+        setSeed(seedInput.value.trim());
+        generate();
+      });
+
+      // เปิดพรีวิว (โหลด SVG ขนาด A4 มาแสดงใน modal)
+      previewBtn.addEventListener("click", () => {
+        const svg = buildSVGDoc(answerSwitch.checked, "A4"); // พรีวิว A4
+        previewContainer.innerHTML = svg;
+        previewModal.style.display = "flex";
+      });
+
+      // ปิดพรีวิว
+      closePreview.addEventListener(
+        "click",
+        () => (previewModal.style.display = "none")
+      );
+
+      // ดาวน์โหลด SVG สองขนาด
+      exportA4.addEventListener("click", () =>
+        exportSVG(answerSwitch.checked, "A4")
+      );
+      exportLetter.addEventListener("click", () =>
+        exportSVG(answerSwitch.checked, "Letter")
+      );
+
+      /* ===== Init ===== */
+      fromParams();
+      customWords.style.fontSize = fsRange.value + "px";
+      fsVal.textContent = fsRange.value;
+      ansSizeVal.textContent = ansSize.value;
+      ansThickVal.textContent = ansThick.value;
+      setSeed(seedInput.value.trim());
+      showAnswers = answerSwitch.checked;
+      generate();
+    </script>
+  </body>
+</html>
